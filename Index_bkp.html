@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rede Automatiza MG · automação em R · Fhemig</title>
+
+<style id="viewport-base">
+/* =============================================================================
+   viewport-base.css  —  Motor de palco fixo 1920x1080 (FHEMIG)
+   Inclua este bloco INTEGRALMENTE, sem cortes, em toda apresentação.
+   ============================================================================= */
+:root{
+  --stage-w:1920px;
+  --stage-h:1080px;
+  --deck-letterbox:#0b1418;
+  --deck-anim:260ms;
+  --deck-ease:cubic-bezier(0.22,0.61,0.36,1);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:var(--deck-letterbox); }
+.deck-viewport{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:var(--deck-letterbox); }
+.deck-stage{ position:relative; flex:0 0 auto; width:var(--stage-w); height:var(--stage-h); transform-origin:center center; transform:scale(var(--deck-scale,1)); }
+.slide{
+  position:absolute; inset:0; width:var(--stage-w); height:var(--stage-h); overflow:hidden;
+  visibility:hidden; opacity:0; pointer-events:none; z-index:1;
+  transition:opacity var(--deck-anim) var(--deck-ease), visibility 0s linear var(--deck-anim);
+}
+.slide.active{
+  visibility:visible; opacity:1; pointer-events:auto; z-index:2;
+  transition:opacity var(--deck-anim) var(--deck-ease), visibility 0s linear 0s;
+}
+.slide-inner{ position:absolute; inset:0; display:flex; flex-direction:column; width:100%; height:100%; }
+.reveal{
+  opacity:0; transform:translateY(28px);
+  transition:opacity var(--deck-anim) var(--deck-ease), transform var(--deck-anim) var(--deck-ease);
+  will-change:opacity, transform;
+}
+.slide.active .reveal{ opacity:1; transform:none; }
+.slide.active .reveal.r1{ transition-delay:0.06s; }
+.slide.active .reveal.r2{ transition-delay:0.12s; }
+.slide.active .reveal.r3{ transition-delay:0.18s; }
+.slide.active .reveal.r4{ transition-delay:0.24s; }
+.slide.active .reveal.r5{ transition-delay:0.30s; }
+.slide.active .reveal.r6{ transition-delay:0.36s; }
+.slide.active .reveal.r7{ transition-delay:0.42s; }
+.slide.active .reveal.r8{ transition-delay:0.48s; }
+.reveal.from-left{ transform:translateX(-28px); }
+.reveal.from-right{ transform:translateX(28px); }
+.reveal.from-down{ transform:translateY(-28px); }
+.reveal.fade-only{ transform:none; }
+.slide.active .reveal.from-left,
+.slide.active .reveal.from-right,
+.slide.active .reveal.from-down{ transform:none; }
+@media (prefers-reduced-motion: reduce){
+  .slide,.slide.active{ transition:visibility 0s, opacity 0s; }
+  .reveal,.slide.active .reveal{ transition:none; transform:none; opacity:1; }
+  *,*::before,*::after{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+}
+</style>
+
+<style id="fh-theme">
+/* ---------- Fontes ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Corben:wght@400;700&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+/* ---------- Tokens da marca ---------- */
+:root{
+  --fh-primary:#008EA7;
+  --fh-light:#00AFD2;
+  --fh-orange:#F37950;
+  --fh-page:#F8FAFC;
+  --fh-ink:#15323B;
+  --fh-ink-soft:#3F5C66;
+  --fh-muted:#6E8A93;
+  --fh-line:rgba(0,142,167,0.12);
+  --glass-bg:rgba(255,255,255,0.65);
+  --glass-border:rgba(255,255,255,0.40);
+  --glass-shadow:0 8px 32px 0 rgba(0,142,167,0.05);
+  --on-teal:#ffffff;
+  --on-teal-soft:rgba(255,255,255,0.82);
+  --on-teal-muted:rgba(255,255,255,0.58);
+  --glass-teal-bg:rgba(255,255,255,0.12);
+  --glass-teal-bd:rgba(255,255,255,0.22);
+  --fh-gradient:linear-gradient(135deg,#008EA7 0%,#00AFD2 100%);
+  --font-sans:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --font-display:'Corben',Georgia,'Times New Roman',serif;
+}
+body{ font-family:var(--font-sans); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+
+/* ---------- Fundos por tipo de slide ---------- */
+.slide--cover{ background-color:#008EA7; background-image:url('capa.png'); background-size:cover; background-position:center; color:var(--on-teal); }
+.slide--content{ background-color:var(--fh-page); background-image:url('background.png'); background-size:cover; background-position:center; color:var(--fh-ink); }
+.slide--closing{ background-color:#008EA7; background-image:url('encerramento.png'); background-size:cover; background-position:center; color:var(--on-teal); }
+
+/* ---------- Cabeçalho fixo ---------- */
+.deck-header{ position:absolute; top:0; left:0; right:0; height:104px; z-index:30; display:flex; align-items:center; justify-content:space-between; padding:0 80px; pointer-events:none; }
+.deck-brand{ display:inline-flex; align-items:center; padding:10px 18px; border-radius:14px; background:rgba(255,255,255,0.60); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.45); box-shadow:var(--glass-shadow); }
+.deck-brand img{ height:40px; width:auto; display:block; }
+.deck-ctx{ font:600 15px/1 var(--font-sans); letter-spacing:0.04em; color:var(--fh-ink-soft); padding:9px 16px; border-radius:12px; background:rgba(255,255,255,0.55); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.40); }
+
+/* ---------- Navegação fixa ---------- */
+.deck-nav{ position:absolute; left:50%; bottom:40px; transform:translateX(-50%); z-index:30; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:999px; background:rgba(255,255,255,0.60); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.45); box-shadow:var(--glass-shadow); }
+.deck-btn{ width:44px; height:44px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; background:rgba(0,142,167,0.08); color:var(--fh-primary); transition:background var(--deck-anim) var(--deck-ease); }
+.deck-btn:hover{ background:rgba(0,142,167,0.16); }
+.deck-btn:disabled{ opacity:0.35; cursor:default; }
+.deck-count{ min-width:96px; text-align:center; color:var(--fh-ink-soft); font:700 15px/1 var(--font-sans); letter-spacing:0.06em; padding:0 6px; }
+.deck-track{ margin-top:7px; height:3px; border-radius:2px; background:rgba(0,142,167,0.14); overflow:hidden; }
+.deck-fill{ height:100%; width:0%; background:var(--fh-primary); border-radius:2px; transition:width var(--deck-anim) var(--deck-ease); }
+
+/* ---------- Tipografia de slide ---------- */
+.eyebrow{ font:600 22px/1.2 var(--font-sans); letter-spacing:0.14em; text-transform:uppercase; color:var(--fh-primary); margin:0 0 22px; }
+.slide-title{ font:800 84px/1.04 var(--font-sans); letter-spacing:-0.02em; margin:0; color:inherit; max-width:1400px; }
+.slide-title.sm{ font-size:64px; }
+.lead{ font:400 30px/1.45 var(--font-sans); margin:28px 0 0; max-width:1100px; color:var(--fh-ink-soft); }
+.display{ font-family:var(--font-display); font-weight:700; }
+.hl{ color:var(--fh-primary); }
+.hl.orange{ color:var(--fh-orange); }
+.slide--cover .lead,.slide--closing .lead{ color:var(--on-teal-soft); }
+.slide--cover .eyebrow,.slide--closing .eyebrow{ color:var(--on-teal-soft); }
+.slide--cover .hl,.slide--closing .hl{ color:#ffffff; }
+
+/* ---------- Card de vidro ---------- */
+.glass{ background:var(--glass-bg); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); border-radius:24px; padding:40px; }
+.slide--cover .glass,.slide--closing .glass{ background:var(--glass-teal-bg); border-color:var(--glass-teal-bd); box-shadow:0 8px 32px 0 rgba(0,0,0,0.10); }
+
+/* ---------- Layout base ---------- */
+.slide-inner{ padding:150px 120px 130px; }
+.slide-inner.center{ justify-content:center; }
+.slide-inner.end{ justify-content:flex-end; }
+
+/* ---------- Componentes ---------- */
+.cards-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+.cards-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:32px; }
+.ico{ width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; background:rgba(0,142,167,0.10); color:var(--fh-primary); margin-bottom:26px; }
+.ico svg{ width:34px; height:34px; }
+.card-h{ font:700 28px/1.2 var(--font-sans); color:var(--fh-ink); margin:0 0 12px; }
+.card-p{ font:400 20px/1.5 var(--font-sans); color:var(--fh-ink-soft); margin:0; }
+.stat{ text-align:left; }
+.stat-n{ font-size:96px; line-height:1; color:var(--fh-primary); }
+.stat-n.orange{ color:var(--fh-orange); }
+.stat-c{ font:400 20px/1.4 var(--font-sans); color:var(--fh-ink-soft); margin-top:14px; max-width:300px; }
+.split{ display:grid; grid-template-columns:1.05fr 0.95fr; gap:80px; align-items:center; height:100%; }
+.steps{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+.step{ padding:32px; }
+.step-n{ display:block; font-size:40px; color:var(--fh-primary); margin-bottom:16px; }
+.tag{ display:inline-block; font:600 15px/1 var(--font-sans); letter-spacing:0.08em; text-transform:uppercase; padding:8px 14px; border-radius:999px; background:rgba(0,142,167,0.10); color:var(--fh-primary); }
+.tag-muted{ background:rgba(110,138,147,0.14); color:var(--fh-muted); }
+.ring{ width:300px; height:300px; border-radius:50%; background:conic-gradient(var(--fh-primary) calc(var(--p,72)*1%), rgba(0,142,167,0.12) 0); display:flex; align-items:center; justify-content:center; margin:0 auto; }
+.ring-mid{ width:228px; height:228px; border-radius:50%; background:var(--fh-page); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+</style>
+
+<style id="fh-extra">
+/* ---------- Profundidade de fundo sem PNG (gradiente da marca embutido) ----------
+   A imagem opcional (capa.png/background.png/encerramento.png) é desenhada por cima
+   do gradiente; se faltar, o gradiente segura o visual. */
+.slide--cover{ background-image:url('capa.png'), radial-gradient(125% 120% at 80% 14%, #00B6DA 0%, #008EA7 48%, #00697E 100%); }
+.slide--content{ background-image:url('background.png'), radial-gradient(120% 130% at 90% 4%, rgba(0,175,210,0.10) 0%, rgba(248,250,252,0) 42%), linear-gradient(180deg,#FBFDFE 0%, #EFF5F7 100%); }
+.slide--closing{ background-image:url('encerramento.png'), radial-gradient(125% 130% at 18% 88%, #00B6DA 0%, #008EA7 50%, #00647A 100%); }
+
+/* ---------- Fonte monoespaçada para nomes de arquivo/URL (stack do sistema) ---------- */
+.mono{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace; }
+
+/* ---------- Botão de link ---------- */
+.btn-link{ display:inline-flex; align-items:center; gap:12px; padding:16px 26px; border-radius:14px; text-decoration:none; font:700 20px/1 var(--font-sans); background:var(--fh-primary); color:#fff; box-shadow:0 10px 30px rgba(0,142,167,0.28); transition:transform var(--deck-anim) var(--deck-ease), box-shadow var(--deck-anim) var(--deck-ease), background var(--deck-anim) var(--deck-ease); }
+.btn-link:hover{ transform:translateY(-2px); box-shadow:0 16px 40px rgba(0,142,167,0.34); background:#0a9bb5; }
+.btn-link svg{ width:22px; height:22px; }
+.note-soft{ font:400 20px/1.5 var(--font-sans); color:var(--fh-muted); margin:0; max-width:1000px; }
+
+/* ---------- Chips de stack ---------- */
+.chip-row{ display:flex; flex-wrap:wrap; gap:12px; }
+.chip{ font:600 19px/1 var(--font-sans); padding:13px 20px; border-radius:999px; background:rgba(0,142,167,0.10); color:var(--fh-primary); border:1px solid rgba(0,142,167,0.16); }
+
+/* ---------- Lista com check ---------- */
+.list-check{ list-style:none; margin:0; padding:0; }
+.list-check li{ display:flex; gap:14px; align-items:flex-start; padding:14px 0; font:400 21px/1.4 var(--font-sans); color:var(--fh-ink-soft); }
+.list-check li + li{ border-top:1px solid var(--fh-line); }
+.list-check .ci{ flex:0 0 auto; width:26px; height:26px; color:var(--fh-primary); margin-top:1px; }
+.list-check .ci svg{ width:26px; height:26px; }
+.card-eyebrow{ font:700 16px/1 var(--font-sans); letter-spacing:0.1em; text-transform:uppercase; color:var(--fh-primary); margin:0 0 18px; }
+
+/* ---------- Moldura de código (print do script) ---------- */
+.split.stretch{ align-items:stretch; }
+.code-frame{ border-radius:18px; overflow:hidden; border:1px solid var(--glass-border); background:var(--glass-bg); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); box-shadow:var(--glass-shadow); display:flex; flex-direction:column; max-height:680px; }
+.code-bar{ display:flex; align-items:center; gap:8px; padding:14px 18px; background:rgba(0,142,167,0.07); border-bottom:1px solid var(--fh-line); }
+.code-bar .dot{ width:11px; height:11px; border-radius:50%; background:rgba(0,142,167,0.25); }
+.code-bar .code-name{ margin-left:12px; font-size:15px; color:var(--fh-muted); }
+.code-body{ position:relative; flex:1; min-height:360px; display:flex; align-items:center; justify-content:center; padding:14px; background:#EAF2F4; }
+.code-body img{ max-width:100%; max-height:620px; width:auto; height:auto; display:block; border-radius:8px; }
+.code-ph{ display:none; width:100%; min-height:330px; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--fh-muted); font-size:18px; border:2px dashed rgba(0,142,167,0.25); border-radius:10px; }
+.code-ph .code-ph-name{ font-size:22px; color:var(--fh-ink-soft); }
+
+/* ---------- Texto placeholder de explicação ---------- */
+.ph-text{ font:700 30px/1.3 var(--font-sans); color:var(--fh-ink); margin:0; padding:20px; border:2px dashed rgba(0,142,167,0.3); border-radius:12px; background:rgba(0,142,167,0.04); letter-spacing:0.02em; }
+.libs{ margin:18px 0 0; font-size:16px; color:var(--fh-muted); letter-spacing:0.01em; }
+
+/* ---------- Mock do painel ---------- */
+.dash-mock{ border-radius:18px; overflow:hidden; border:1px solid var(--glass-border); background:var(--glass-bg); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); box-shadow:var(--glass-shadow); }
+.dash-bar{ display:flex; align-items:center; gap:8px; padding:13px 18px; background:rgba(0,142,167,0.07); border-bottom:1px solid var(--fh-line); }
+.dash-bar .dot{ width:10px; height:10px; border-radius:50%; background:rgba(0,142,167,0.25); }
+.dash-bar .url{ margin-left:10px; font-size:14px; color:var(--fh-muted); }
+.dash-body{ padding:26px; display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.tile{ background:rgba(255,255,255,0.7); border:1px solid var(--fh-line); border-radius:14px; padding:20px; }
+.tile .t-n{ font:800 36px/1 var(--font-sans); color:var(--fh-primary); }
+.tile .t-l{ font-size:14px; color:var(--fh-muted); margin-top:8px; }
+.tile.wide{ grid-column:1 / -1; }
+.tile .infos{ display:flex; gap:8px; margin-top:14px; align-items:center; }
+.tile .infos .lbl{ font-size:13px; color:var(--fh-muted); }
+.ibtn{ width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(0,142,167,0.12); color:var(--fh-primary); font:700 15px/1 var(--font-display); }
+.mini{ display:flex; align-items:flex-end; gap:12px; height:96px; }
+.mini i{ display:block; width:26px; border-radius:6px 6px 0 0; background:var(--fh-gradient); }
+
+/* ---------- Tabela antes/depois ---------- */
+.cmp{ margin-top:48px; border-radius:20px; overflow:hidden; border:1px solid var(--glass-border); background:var(--glass-bg); -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); box-shadow:var(--glass-shadow); }
+.cmp-row{ display:grid; grid-template-columns:1.2fr 1fr 1fr; align-items:center; padding:21px 40px; }
+.cmp-row + .cmp-row{ border-top:1px solid var(--fh-line); }
+.cmp-head{ background:rgba(0,142,167,0.06); }
+.cmp-head span{ font:700 16px/1 var(--font-sans); letter-spacing:0.08em; text-transform:uppercase; color:var(--fh-muted); }
+.cmp-head .depois{ color:var(--fh-primary); }
+.cmp-row .asp{ font:600 22px/1.3 var(--font-sans); color:var(--fh-ink); }
+.cmp-row .antes{ font:400 21px/1.3 var(--font-sans); color:var(--fh-muted); }
+.cmp-row .depois{ font:700 21px/1.3 var(--font-sans); color:var(--fh-primary); }
+</style>
+</head>
+
+<body>
+<div class="deck-viewport">
+  <div class="deck-stage">
+
+    <!-- Cabeçalho fixo (persistente) -->
+    <header class="deck-header">
+      <span class="deck-brand">
+        <img src="https://fhemig.mg.gov.br/images/header/marcafhemig_2019.png" alt="FHEMIG">
+      </span>
+      <span class="deck-ctx">CINFO · Fhemig</span>
+    </header>
+
+    <!-- 1 · Capa -->
+    <section class="slide slide--cover active" data-slide>
+      <div class="slide-inner center">
+        <p class="eyebrow reveal r1">Rede Automatiza MG</p>
+        <h1 class="slide-title reveal r2">Do processo manual ao fluxo em <span class="display hl">R</span></h1>
+        <p class="lead reveal r3">Automação em R no monitoramento de indicadores contratuais</p>
+        <p class="lead reveal r4" style="font-size:22px;color:var(--on-teal-muted);margin-top:40px">Ana Clara Mendes Rezende · Coordenação de Informação · Fhemig</p>
+      </div>
+    </section>
+
+    <!-- 2 · Quem apresenta (duas colunas) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <div class="split">
+          <div>
+            <p class="eyebrow reveal r1">Quem apresenta</p>
+            <h2 class="slide-title sm reveal r2">Ana Clara Mendes Rezende</h2>
+            <p class="lead reveal r3">Coordenação de Informação na Fhemig. Mestranda em filosofia da física na UFMG.</p>
+            <p class="lead reveal r4" style="font-size:22px;margin-top:20px">Gestão de dados, BI e apoio à decisão. Integração de Tasy, SIGH, DataSUS e DRG.</p>
+          </div>
+          <div class="glass reveal r5" style="align-self:center">
+            <p class="card-eyebrow">Stack de trabalho</p>
+            <div class="chip-row">
+              <span class="chip">R</span>
+              <span class="chip">SQL</span>
+              <span class="chip">Power BI</span>
+              <span class="chip">Microsoft Fabric</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 · A CINFO (pontos) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Coordenação de Informação</p>
+        <h2 class="slide-title sm reveal r2">O que a CINFO faz</h2>
+        <p class="lead reveal r3" style="font-size:24px">Vinculada à Administração Central. Converte dado operacional em informação para a gestão.</p>
+        <div class="cards-3" style="margin-top:48px">
+          <div class="glass reveal r4">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5v4M12 11.5l-5 5M12 11.5l5 5"/></svg></div>
+            <h3 class="card-h">Integração de dados</h3>
+            <p class="card-p">Reúne sistemas assistenciais e administrativos numa base analítica.</p>
+          </div>
+          <div class="glass reveal r5">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+            <h3 class="card-h">Indicadores e BI</h3>
+            <p class="card-p">Constrói indicadores institucionais e dashboards para as unidades.</p>
+          </div>
+          <div class="glass reveal r6">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3 class="card-h">Governança e transparência</h3>
+            <p class="card-p">Padroniza definições e abastece o Portal de Dados Abertos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · CINFO 2.0 (duas colunas) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <div class="split">
+          <div>
+            <p class="eyebrow reveal r1">CINFO 2.0</p>
+            <h2 class="slide-title sm reveal r2">Arquitetura moderna de dados</h2>
+            <p class="lead reveal r3">Camada única sobre Fabric e Lakehouse, com dataflows corporativos e modelo semântico. A integração de SIGH para Tasy preserva a continuidade histórica.</p>
+          </div>
+          <div class="glass reveal r4" style="align-self:center">
+            <p class="card-eyebrow">Pilares</p>
+            <ul class="list-check">
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg></span> Fabric e Lakehouse como base</li>
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></span> Dataflows e camada semântica</li>
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M12 8l1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z"/></svg></span> ETL em R e refresh incremental</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · Divisor: o problema -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <div class="display reveal r1" style="font-size:160px;color:var(--fh-line);line-height:.9">01</div>
+        <h2 class="slide-title reveal r2" style="margin-top:-30px">O problema</h2>
+        <div class="reveal r3" style="width:120px;height:4px;background:var(--fh-gradient);border-radius:2px;margin-top:28px"></div>
+      </div>
+    </section>
+
+    <!-- 6 · Cenário (afirmação) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <p class="eyebrow reveal r1" style="text-align:center">Qual é o problema?</p>
+        <h2 class="slide-title reveal r2" style="text-align:center;font-size:60px;max-width:1560px;align-self:center">
+          Você acabou de assumir <span class="display hl orange">30</span> indicadores do contrato do Hospital Regional Antônio Dias
+        </h2>
+        <p class="lead reveal r3" style="text-align:center;max-width:1100px;align-self:center">Primeiro dia na Gerência de Monitoramento de Parcerias. Todos eles, sob a sua responsabilidade.</p>
+      </div>
+    </section>
+
+    <!-- 7 · Metodologia + manual.pdf -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">A metodologia de cálculo</p>
+        <h2 class="slide-title sm reveal r2">E o cálculo de apenas <span class="display hl">3</span> deles ocupa um manual inteiro</h2>
+        <p class="lead reveal r3">Cada indicador tem ficha técnica própria: fórmula, fonte, periodicidade, meta e regra de apuração.</p>
+        <p class="note-soft reveal r4" style="margin-top:22px">As metas seguem lógica punitiva. Abaixo de 70%, o desempenho do indicador zera.</p>
+        <div class="reveal r5" style="margin-top:44px">
+          <a class="btn-link" href="manual.pdf" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+            <span class="mono">manual.pdf</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 · O caminho manual (processo) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Um indicador, todo mês</p>
+        <h2 class="slide-title sm reveal r2">O caminho manual dos dados</h2>
+        <div class="steps" style="margin-top:64px">
+          <div class="glass step reveal r3"><span class="step-n display">01</span><p class="card-p">Baixar o arquivo .dbc no DataSUS</p></div>
+          <div class="glass step reveal r4"><span class="step-n display">02</span><p class="card-p">Converter para .dbf e abrir no TABWIN</p></div>
+          <div class="glass step reveal r5"><span class="step-n display">03</span><p class="card-p">Tabular, filtrar e exportar para CSV</p></div>
+          <div class="glass step reveal r6"><span class="step-n display">04</span><p class="card-p">Tratar no Excel, com PROCV e cruzamentos</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 · O peso do processo (pontos) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">O que o processo exige</p>
+        <h2 class="slide-title sm reveal r2">Repetir tudo isso, todo <span class="display hl">mês</span></h2>
+        <div class="cards-3" style="margin-top:56px">
+          <div class="glass reveal r3">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/></svg></div>
+            <h3 class="card-h">Acesso</h3>
+            <p class="card-p">Login e permissão em cada sistema: DataSUS, DRG, internos.</p>
+          </div>
+          <div class="glass reveal r4">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.2.61.76 1.05 1.42 1.05H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+            <h3 class="card-h">Domínio técnico</h3>
+            <p class="card-p">Conhecer telas, menus, filtros e parâmetros de cada fonte.</p>
+          </div>
+          <div class="glass reveal r5">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></div>
+            <h3 class="card-h">Planilha à mão</h3>
+            <p class="card-p">Abastecer e calcular no Excel, um indicador de cada vez.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 · Afirmação pivô -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <h2 class="slide-title reveal r1" style="text-align:center;font-size:80px;max-width:1500px;align-self:center">
+          E se tudo pudesse ser <span class="display hl orange">automatizado</span>?
+        </h2>
+      </div>
+    </section>
+
+    <!-- 11 · Divisor: automação em R -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <div class="display reveal r1" style="font-size:160px;color:var(--fh-line);line-height:.9">02</div>
+        <h2 class="slide-title reveal r2" style="margin-top:-30px">Automação em R</h2>
+        <div class="reveal r3" style="width:120px;height:4px;background:var(--fh-gradient);border-radius:2px;margin-top:28px"></div>
+      </div>
+    </section>
+
+    <!-- 12 · O que é R (duas colunas) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <div class="split">
+          <div>
+            <p class="eyebrow reveal r1">A ferramenta</p>
+            <h2 class="slide-title sm reveal r2">O que é o <span class="display hl">R</span></h2>
+            <p class="lead reveal r3">Linguagem para análise de dados e estatística. Serve bem para automação, integração de fontes e pipelines de dados.</p>
+          </div>
+          <div class="glass reveal r4" style="align-self:center">
+            <p class="card-eyebrow">Por que usamos</p>
+            <ul class="list-check">
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></span> Automatiza tarefas repetitivas</li>
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></span> Conecta APIs, FTP e bancos de dados</li>
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></span> Lida com grande volume de dados</li>
+              <li><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-5"/></svg></span> Processo reproduzível e auditável</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 · Script 1 -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Script 1 · extração do DataSUS</p>
+        <h2 class="slide-title sm reveal r2">Download direto da FTP com microdatasus</h2>
+        <div class="split stretch reveal r3" style="grid-template-columns:1.22fr 0.78fr;height:auto;flex:1;margin-top:36px">
+          <div class="code-frame">
+            <div class="code-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="code-name mono">script1.R</span></div>
+            <div class="code-body">
+              <img src="script1.png" alt="Script 1 em R" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="code-ph">
+                <span class="code-ph-name mono">script1.png</span>
+                <span>coloque o print do script aqui</span>
+              </div>
+            </div>
+          </div>
+          <div class="glass" style="align-self:center">
+            <p class="card-eyebrow">O que o código faz</p>
+            <p class="ph-text">EXPLICAÇÃO DO SCRIPT 1</p>
+            <p class="libs mono">microdatasus · dplyr · lubridate · DBI / RMySQL</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14 · Script 2 -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Script 2 · integração do DRG Brasil</p>
+        <h2 class="slide-title sm reveal r2">Consumo da API e persistência em banco</h2>
+        <div class="split stretch reveal r3" style="grid-template-columns:1.22fr 0.78fr;height:auto;flex:1;margin-top:36px">
+          <div class="code-frame">
+            <div class="code-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="code-name mono">script2.R</span></div>
+            <div class="code-body">
+              <img src="script2.png" alt="Script 2 em R" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="code-ph">
+                <span class="code-ph-name mono">script2.png</span>
+                <span>coloque o print do script aqui</span>
+              </div>
+            </div>
+          </div>
+          <div class="glass" style="align-self:center">
+            <p class="card-eyebrow">O que o código faz</p>
+            <p class="ph-text">EXPLICAÇÃO DO SCRIPT 2</p>
+            <p class="libs mono">httr · jsonlite · purrr</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15 · Integração Fabric / Power BI (processo) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Do dado ao painel</p>
+        <h2 class="slide-title sm reveal r2">R, banco, Fabric e Power BI</h2>
+        <div class="steps" style="margin-top:64px">
+          <div class="glass step reveal r3"><span class="step-n display">01</span><p class="card-p">R extrai e trata DataSUS e DRG, e grava em banco</p></div>
+          <div class="glass step reveal r4"><span class="step-n display">02</span><p class="card-p">Dataflows no Fabric trazem SIGH, Forms e SharePoint</p></div>
+          <div class="glass step reveal r5"><span class="step-n display">03</span><p class="card-p">Dataset central e camada semântica no Power BI</p></div>
+          <div class="glass step reveal r6"><span class="step-n display">04</span><p class="card-p">Dashboard do contrato, pronto para consulta</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16 · O painel (link + mock) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <div class="split">
+          <div>
+            <p class="eyebrow reveal r1">O resultado</p>
+            <h2 class="slide-title sm reveal r2">Os <span class="display hl">30</span> indicadores num só painel</h2>
+            <p class="lead reveal r3">Todos ao mesmo tempo: por mês e por período de avaliação. O cálculo de cada indicador abre no botão de informação.</p>
+            <div class="reveal r4" style="margin-top:36px">
+              <a class="btn-link" href="https://app.powerbi.com/view?r=eyJrIjoiNDI4ZWFiNWYtZjZmMC00ZjI5LWFhM2ItMzQzOGY3NDRmZGFhIiwidCI6IjJhN2M1ZWQ1LWE5MGEtNGEyMy1hNTA4LTFmNjFkMzRlZmZhOCJ9" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+                Abrir o dashboard
+              </a>
+            </div>
+          </div>
+          <div class="reveal r5" style="align-self:center">
+            <div class="dash-mock">
+              <div class="dash-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url mono">app.powerbi.com</span></div>
+              <div class="dash-body">
+                <div class="tile"><div class="t-n">30</div><div class="t-l">indicadores</div></div>
+                <div class="tile"><div class="t-n">12</div><div class="t-l">meses no histórico</div></div>
+                <div class="tile wide">
+                  <div class="mini">
+                    <i style="height:46%"></i><i style="height:64%"></i><i style="height:52%"></i><i style="height:78%"></i><i style="height:88%"></i><i style="height:70%"></i><i style="height:96%"></i>
+                  </div>
+                  <div class="infos"><span class="ibtn">i</span><span class="ibtn">i</span><span class="ibtn">i</span><span class="lbl">cálculo em cada botão de informação</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17 · Divisor: resultados e aprendizados -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <div class="display reveal r1" style="font-size:160px;color:var(--fh-line);line-height:.9">03</div>
+        <h2 class="slide-title reveal r2" style="margin-top:-30px">Resultados e aprendizados</h2>
+        <div class="reveal r3" style="width:120px;height:4px;background:var(--fh-gradient);border-radius:2px;margin-top:28px"></div>
+      </div>
+    </section>
+
+    <!-- 18 · Antes e depois (tabela) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner center">
+        <h2 class="slide-title sm reveal r1" style="text-align:center;align-self:center">O que muda na prática</h2>
+        <div class="cmp reveal r2" style="align-self:center;width:1400px">
+          <div class="cmp-row cmp-head"><span>Aspecto</span><span>Antes</span><span class="depois">Depois</span></div>
+          <div class="cmp-row"><span class="asp">Tempo de processamento</span><span class="antes">Alto</span><span class="depois">Automatizado</span></div>
+          <div class="cmp-row"><span class="asp">Esforço operacional</span><span class="antes">Manual</span><span class="depois">Reduzido</span></div>
+          <div class="cmp-row"><span class="asp">Confiabilidade</span><span class="antes">Baixa</span><span class="depois">Alta</span></div>
+          <div class="cmp-row"><span class="asp">Integração</span><span class="antes">Fragmentada</span><span class="depois">Centralizada</span></div>
+          <div class="cmp-row"><span class="asp">Escalabilidade</span><span class="antes">Limitada</span><span class="depois">Alta</span></div>
+          <div class="cmp-row"><span class="asp">Transparência</span><span class="antes">Restrita</span><span class="depois">Dashboard</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 19 · Aprendizados (pontos) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Aprendizados</p>
+        <h2 class="slide-title sm reveal r2">O que fica</h2>
+        <div class="cards-3" style="margin-top:60px">
+          <div class="glass reveal r3">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <h3 class="card-h">Eficiência e qualidade</h3>
+            <p class="card-p">A automação reduz o erro humano e o tempo de apuração.</p>
+          </div>
+          <div class="glass reveal r4">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <h3 class="card-h">R no setor público</h3>
+            <p class="card-p">Viável para ETL, mesmo em equipe pequena.</p>
+          </div>
+          <div class="glass reveal r5">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
+            <h3 class="card-h">Dado que vira decisão</h3>
+            <p class="card-p">O painel dá visibilidade ao dado que já existia.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 20 · Dicas para começar (processo, 5 passos) -->
+    <section class="slide slide--content" data-slide>
+      <div class="slide-inner">
+        <p class="eyebrow reveal r1">Para quem quer começar</p>
+        <h2 class="slide-title sm reveal r2">Por onde começar</h2>
+        <div class="steps" style="margin-top:64px;grid-template-columns:repeat(5,1fr);gap:20px">
+          <div class="glass step reveal r3" style="padding:28px"><span class="step-n display">01</span><p class="card-p">Comece pelos processos repetitivos</p></div>
+          <div class="glass step reveal r4" style="padding:28px"><span class="step-n display">02</span><p class="card-p">Automatize aos poucos</p></div>
+          <div class="glass step reveal r5" style="padding:28px"><span class="step-n display">03</span><p class="card-p">Use bibliotecas prontas</p></div>
+          <div class="glass step reveal r6" style="padding:28px"><span class="step-n display">04</span><p class="card-p">Documente cada etapa</p></div>
+          <div class="glass step reveal r7" style="padding:28px"><span class="step-n display">05</span><p class="card-p">Pense na arquitetura desde cedo</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 21 · Encerramento -->
+    <section class="slide slide--closing" data-slide>
+      <div class="slide-inner center">
+        <h2 class="slide-title reveal r1" style="font-size:88px">Obrigada</h2>
+        <p class="lead reveal r2" style="max-width:1200px">Automação em R deixa o processo crítico mais rápido, confiável e fácil de escalar.</p>
+        <p class="lead reveal r3" style="font-size:24px;color:var(--on-teal-soft);margin-top:22px;max-width:1200px">Mais do que tecnologia, é mudança de <span class="display hl">cultura</span>: do manual ao orientado por dados.</p>
+        <p class="lead reveal r4" style="font-size:20px;color:var(--on-teal-muted);margin-top:36px">Ana Clara Mendes Rezende · Coordenação de Informação · Fhemig</p>
+      </div>
+    </section>
+
+    <!-- Navegação fixa (persistente) -->
+    <nav class="deck-nav">
+      <button class="deck-btn" id="prevBtn" aria-label="Slide anterior">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="deck-count"><span id="curNum">01</span> / <span id="totNum">21</span>
+        <div class="deck-track"><div class="deck-fill" id="deckFill"></div></div>
+      </div>
+      <button class="deck-btn" id="nextBtn" aria-label="Próximo slide">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </nav>
+
+  </div>
+</div>
+
+<script>
+/* deck-controller: escala o palco e troca os slides. Sem bibliotecas. */
+(function(){
+  var stage   = document.querySelector('.deck-stage');
+  var slides  = Array.prototype.slice.call(document.querySelectorAll('[data-slide]'));
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var curNum  = document.getElementById('curNum');
+  var totNum  = document.getElementById('totNum');
+  var deckFill= document.getElementById('deckFill');
+  var i = 0;
+
+  function fit(){
+    var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+    stage.style.setProperty('--deck-scale', s);
+  }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    for (var k = 0; k < slides.length; k++){
+      slides[k].classList.toggle('active', k === i);
+    }
+    if (curNum)   curNum.textContent = pad(i + 1);
+    if (deckFill) deckFill.style.width = ((i + 1) / slides.length * 100) + '%';
+    if (prevBtn)  prevBtn.disabled = (i === 0);
+    if (nextBtn)  nextBtn.disabled = (i === slides.length - 1);
+  }
+  function next(){ show(i + 1); }
+  function prev(){ show(i - 1); }
+
+  function toggleFs(){
+    if (!document.fullscreenElement){ if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+    else { if (document.exitFullscreen) document.exitFullscreen(); }
+  }
+
+  if (totNum)  totNum.textContent = pad(slides.length);
+  if (nextBtn) nextBtn.addEventListener('click', next);
+  if (prevBtn) prevBtn.addEventListener('click', prev);
+
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' '){ e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); prev(); }
+    else if (e.key === 'Home'){ show(0); }
+    else if (e.key === 'End'){ show(slides.length - 1); }
+    else if (e.key === 'f' || e.key === 'F'){ toggleFs(); }
+  });
+
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  fit();
+  show(0);
+})();
+</script>
+</body>
+</html>
