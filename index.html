@@ -435,56 +435,29 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 
     <section class="slide slide--content" data-slide>
       <div class="slide-inner">
-        <p class="eyebrow reveal r1">Pipeline de Dados Core · Script 01</p>
-        <h2 class="slide-title sm reveal r2">Extração Automatizada do DataSUS via FTP</h2>
-        <div class="split" style="margin-top: 40px; grid-template-columns: 1.15fr 0.85fr;">
-          <div class="code-frame reveal r3">
-            <div class="code-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="code-name">data_extraction_datasus.R</span></div>
-            <div class="code-body">
-              <span class="keyword">library</span>(microdatasus)<br>
-              <span class="keyword">library</span>(dplyr)<br>
-              <span class="comment"># Executa download automatizado de arquivos raw estruturados</span><br>
-              dados_brutos <- <span class="string">fetch_datasus</span>(year_start = <span class="string">2026</span>, month_start = <span class="string">1</span>, uf = <span class="string">"MG"</span>, information_system = <span class="string">"SIH-RD"</span>)<br>
-              dados_filtrados <- dados_brutos %>% <span class="string">filter</span>(CNES == <span class="string">"2212345"</span>) <span class="comment"># Código Hospital Regional</span><br>
-              <span class="string">dbWriteTable</span>(conn, <span class="string">"tbl_datasus_staging"</span>, dados_filtrados, append = TRUE)
-            </div>
-          </div>
-          <div class="glass reveal r4">
-            <p class="card-h" style="font-size: 28px;">Lógica Interna do Código</p>
-            <div class="ph-text-box">
-              <p>O ecossistema se conecta diretamente ao servidor FTP federal da computação do SUS, realiza o download inteligente dos pacotes compactados, descompacta em memória, filtra instantaneamente os registros correspondentes da unidade e persiste os resultados higienizados no banco de staging analítico.</p>
-            </div>
-            <p style="margin-top: 24px; font-size: 18px; color: var(--fh-muted); font-weight: 700;">Tecnologias: <span class="mono">microdatasus</span> · <span class="mono">dplyr</span> · <span class="mono">DBI</span></p>
-          </div>
-        </div>
+        <p class="eyebrow reveal r1">Pipeline de Dados mensal · Script DataSUS</p>
+          <a href="https://github.com/Coordenacao-de-Informacao-FHEMIG/rede-automatiza/blob/main/datasus.R" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+            <img 
+              src="script-datasus.png" 
+              alt="Script 1 em R" 
+              style="width: 100%; height: 100%; object-fit: contain; max-width: 100%; max-height: 100%; cursor: pointer;"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            >
+          </a>
       </div>
     </section>
 
     <section class="slide slide--content" data-slide>
       <div class="slide-inner">
-        <p class="eyebrow reveal r1">Integração Avançada · Script 02</p>
-        <h2 class="slide-title sm reveal r2">Consumo de APIs de Saúde do DRG Brasil</h2>
-        <div class="split" style="margin-top: 40px; grid-template-columns: 1.15fr 0.85fr;">
-          <div class="code-frame reveal r3">
-            <div class="code-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="code-name">api_drg_integration.R</span></div>
-            <div class="code-body">
-              <span class="keyword">library</span>(httr)<br>
-              <span class="keyword">library</span>(jsonlite)<br>
-              <span class="comment"># Requisição segura com autenticação via Token JWT corporativo</span><br>
-              response <- <span class="string">GET</span>(<span class="string">"https://api.drgbrasil.com.br/v1/indicadores"</span>, add_headers(Authorization = token))<br>
-              payload <- <span class="string">content</span>(response, as = <span class="string">"text"</span>, encoding = <span class="string">"UTF-8"</span>)<br>
-              dados_drg <- <span class="string">fromJSON</span>(payload) %>% <span class="string">as_tibble</span>()<br>
-              <span class="string">dbWriteTable</span>(conn, <span class="string">"tbl_drg_analytics"</span>, dados_drg, overwrite = TRUE)
-            </div>
-          </div>
-          <div class="glass reveal r4">
-            <p class="card-h" style="font-size: 28px;">Lógica Interna do Código</p>
-            <div class="ph-text-box">
-              <p>Estabelece comunicação segura de ponta a ponta com a API RESTful do DRG Brasil. O script realiza a paginação automática dos endpoints, decodifica os formatos estruturados complexos JSON em tabelas analíticas organizadas e sincroniza a base de dados de forma transparente.</p>
-            </div>
-            <p style="margin-top: 24px; font-size: 18px; color: var(--fh-muted); font-weight: 700;">Tecnologias: <span class="mono">httr</span> · <span class="mono">jsonlite</span> · <span class="mono">purrr</span></p>
-          </div>
-        </div>
+        <p class="eyebrow reveal r1">Pipeline de Dados diário · Script DRG</p>
+          <a href="https://github.com/Coordenacao-de-Informacao-FHEMIG/rede-automatiza/blob/main/drg.r" target="_blank" rel="noopener noreferrer" style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
+            <img 
+              src="script-drg.png" 
+              alt="Script 2 em R" 
+              style="width: 100%; height: 100%; object-fit: contain; max-width: 100%; max-height: 100%; cursor: pointer;"
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+            >
+          </a>
       </div>
     </section>
 
@@ -496,22 +469,22 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
           <div class="glass step reveal r3">
             <span class="step-n">01</span>
             <h3 class="card-h" style="font-size: 24px;">Extração R</h3>
-            <p class="card-p" style="font-size: 18px;">R orquestra, extrai e limpa dados do DataSUS e DRG diretamente para as tabelas de banco analítico dedicado.</p>
+            <p class="card-p" style="font-size: 18px;">R orquestra, extrai e limpa dados do DataSUS e DRG diretamente para as tabelas dos bancos analíticos dedicados.</p>
           </div>
           <div class="glass step reveal r4">
             <span class="step-n">02</span>
             <h3 class="card-h" style="font-size: 24px;">Dataflows Fabric</h3>
-            <p class="card-p" style="font-size: 18px;">Fluxos inteligentes no Microsoft Fabric consolidam dados do SIGH histórico, Forms operacionais e SharePoint corporativo.</p>
+            <p class="card-p" style="font-size: 18px;">DataFlows no Microsoft Fabric consolidam dados do DataSUS e DRG + SIGH/Tasy histórico, Forms operacionais e SharePoint corporativo.</p>
           </div>
           <div class="glass step reveal r5">
             <span class="step-n">03</span>
             <h3 class="card-h" style="font-size: 24px;">Camada Semântica</h3>
-            <p class="card-p" style="font-size: 18px;">Agrupamento técnico em um Dataset único centralizado no Power BI. Regras de negócio uniformizadas para toda a FHEMIG.</p>
+            <p class="card-p" style="font-size: 18px;">Agrupamento técnico em um Dataset único centralizado no Power BI. Regras de negócio uniformizadas conforme manual de indicadores.</p>
           </div>
           <div class="glass step reveal r6">
             <span class="step-n">04</span>
             <h3 class="card-h" style="font-size: 24px;">Painel de Gestão</h3>
-            <p class="card-p" style="font-size: 18px;">Dashboard executivo final atualizado em tempo real, pronto para consumo imediato das Secretarias de Estado.</p>
+            <p class="card-p" style="font-size: 18px;">Dashboard executivo final atualizado diariamente, pronto para consumo imediato da Fhemig, da contratada e dos órgãos de controle e auditoria.</p>
           </div>
         </div>
       </div>
@@ -525,15 +498,15 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
             <h2 class="slide-title sm reveal r2">Visibilidade Total dos 30 Indicadores Técnicos</h2>
             <p class="lead reveal r3">Acompanhamento centralizado e unificado por competência e período de avaliação contratual. O algoritmo de cálculo exato de cada métrica abre de forma transparente através de botões nativos de informação.</p>
             <div class="reveal r4" style="margin-top: 40px;">
-              <a class="btn-link" href="https://app.powerbi.com/view?r=eyJrIjoiNDI4ZWFiNWYtZjZmMC00ZjI5LWFhM2ItMzQzOGY3NDRmZGFhIiwidCI6IjJhN2M1ZWQ1LWE5MGEtNGEyMy1hNTA4LTFmNjFkMzRlZmZhOCJ9" target="_blank" rel="noopener">
+              <a class="btn-link" href="https://www.fhemig.mg.gov.br/portal-da-informacao" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                Inicializar Dashboard de Gestão
+                Ir para Portal da Informação - Fhemig
               </a>
             </div>
           </div>
           <div class="reveal r5">
             <div class="dash-mock">
-              <div class="dash-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">analytics.fhemig.mg.gov.br/contratos</span></div>
+              <div class="dash-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">fhemig.mg.gov.br/portal-da-informacao</span></div>
               <div class="dash-body">
                 <div class="tile"><div class="t-n">30</div><div class="t-l">Métricas Ativas</div></div>
                 <div class="tile"><div class="t-n">100%</div><div class="t-l">Auditável</div></div>
@@ -563,11 +536,11 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
         
         <div class="cmp reveal r3">
           <div class="cmp-row cmp-head"><span>Dimensão Analítica</span><span>Fluxo Manual Anterior</span><span class="depois">Fluxo Automatizado Atual</span></div>
-          <div class="cmp-row"><span class="asp">Tempo de Processamento</span><span class="antes">Dias de trabalho intenso</span><span class="depois">Execução em minutos (Zero toque)</span></div>
+          <div class="cmp-row"><span class="asp">Tempo de Processamento</span><span class="antes">Dias de trabalho intenso</span><span class="depois">Execução em minutos completamente automatizada</span></div>
           <div class="cmp-row"><span class="asp">Esforço Operacional</span><span class="antes">Alto risco operacional humano</span><span class="depois">Foco exclusivo em análise crítica</span></div>
           <div class="cmp-row"><span class="asp">Confiabilidade do Dado</span><span class="antes">Suscetível a falhas ocultas</span><span class="depois">Consistência matemática absoluta</span></div>
-          <div class="cmp-row"><span class="asp">Integração da Estrutura</span><span class="antes">Silos isolados de arquivos</span><span class="depois">Centralizada em Data Lakehouse</span></div>
-          <div class="cmp-row"><span class="asp">Escalabilidade para MG</span><span class="antes">Restrita a poucas unidades</span><span class="depois">Pronto para expansão em grande escala</span></div>
+          <div class="cmp-row"><span class="asp">Integração da Estrutura</span><span class="antes">Silos isolados de arquivos</span><span class="depois">Bancos SQL + Fabric</span></div>
+          <div class="cmp-row"><span class="asp">Escalabilidade para Fhemig</span><span class="antes">Restrita a poucas unidades</span><span class="depois">Pronto para expansão em grande escala</span></div>
         </div>
       </div>
     </section>
@@ -581,12 +554,12 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
           <div class="glass reveal r4">
             <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
             <h3 class="card-h">Eficiência com Qualidade</h3>
-            <p class="card-p">A engenharia de dados avançada e automação anulam falhas operacionais e aceleram entregas ágeis.</p>
+            <p class="card-p">A engenharia de dados avançada e automação anulam falhas operacionais e tornam as entregas ágeis e escaláveis.</p>
           </div>
           <div class="glass reveal r5">
             <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <h3 class="card-h">R no Setor Público</h3>
-            <p class="card-p">Viabilidade técnica total e baixo custo de implementação de ETL moderno, mesmo em equipes enxutas.</p>
+            <p class="card-p">Viabilidade técnica e baixo custo de implementação de ETL moderno, mesmo em equipes enxutas.</p>
           </div>
           <div class="glass reveal r6">
             <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
@@ -601,28 +574,45 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
       <div class="slide-inner">
         <p class="eyebrow reveal r1">Diretrizes para Implementação</p>
         <h2 class="slide-title sm reveal r2">Como Iniciar a Transição nas Secretarias</h2>
-        <div class="steps" style="grid-template-columns: repeat(5, 1fr); margin-top: 60px; gap: 20px;">
-          <div class="glass step reveal r3" style="padding: 30px 20px;"><span class="step-n" style="font-size: 36px;">01</span><p class="card-p" style="font-size: 18px;">Mapeie e priorize processos manuais exaustivos</p></div>
-          <div class="glass step reveal r4" style="padding: 30px 20px;"><span class="step-n" style="font-size: 36px;">02</span><p class="card-p" style="font-size: 18px;">Automatize o pipeline em blocos modulares</p></div>
-          <div class="glass step reveal r5" style="padding: 30px 20px;"><span class="step-n" style="font-size: 36px;">03</span><p class="card-p" style="font-size: 18px;">Aproveite bibliotecas maduras e validadas</p></div>
-          <div class="glass step reveal r6" style="padding: 30px 20px;"><span class="step-n" style="font-size: 36px;">04</span><p class="card-p" style="font-size: 18px;">Documente rigidamente o dicionário de regras</p></div>
-          <div class="glass step reveal r7" style="padding: 30px 20px;"><span class="step-n" style="font-size: 36px;">05</span><p class="card-p" style="font-size: 18px;">Estruture pensando em governança analítica</p></div>
-        </div>
         
-        <div class="reveal r7" style="margin-top: 40px; text-align: center;">
-          <a class="btn-link" style="background: #E74C3C; box-shadow: 0 12px 35px rgba(231,76,60,0.3);" href="https://www.youtube.com/playlist?list=PLL02hqcLCThA2e0KLn9PGfY2_jeECJ2TF" target="_blank" rel="noopener">
-            Acessar Playlist Técnica de Engenharia de Dados (CINFO) no YouTube
-          </a>
+        <div class="steps" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); justify-content: center; margin-top: 50px; gap: 25px;">
+          
+          <div class="glass step reveal r3" style="padding: 35px 25px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px;">
+            <span class="step-n" style="font-size: 42px; font-weight: bold; line-height: 1;">01</span>
+            <p class="card-p" style="font-size: 20px; margin: 0; line-height: 1.4;">Mapeie e priorize processos manuais exaustivos</p>
+          </div>
+          
+          <div class="glass step reveal r4" style="padding: 35px 25px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px;">
+            <span class="step-n" style="font-size: 42px; font-weight: bold; line-height: 1;">02</span>
+            <p class="card-p" style="font-size: 20px; margin: 0; line-height: 1.4;">Automatize o pipeline em blocos modulares</p>
+          </div>
+          
+          <div class="glass step reveal r5" style="padding: 35px 25px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px;">
+            <span class="step-n" style="font-size: 42px; font-weight: bold; line-height: 1;">03</span>
+            <p class="card-p" style="font-size: 20px; margin: 0; line-height: 1.4;">Aproveite bibliotecas maduras e validadas</p>
+          </div>
+          
+          <div class="glass step reveal r6" style="padding: 35px 25px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px;">
+            <span class="step-n" style="font-size: 42px; font-weight: bold; line-height: 1;">04</span>
+            <p class="card-p" style="font-size: 20px; margin: 0; line-height: 1.4;">Documente rigidamente o dicionário de regras</p>
+          </div>
+          
+          <div class="glass step reveal r7" style="padding: 35px 25px; display: flex; flex-direction: column; gap: 10px; border-radius: 12px;">
+            <span class="step-n" style="font-size: 42px; font-weight: bold; line-height: 1;">05</span>
+            <p class="card-p" style="font-size: 20px; margin: 0; line-height: 1.4;">Estruture pensando em governança analítica</p>
+          </div>
+
         </div>
       </div>
     </section>
 
+
     <section class="slide slide--closing" data-slide>
       <div class="slide-inner center">
-        <h2 class="slide-title reveal r1">Agradeço a Atenção</h2>
+        <h2 class="slide-title reveal r1">Obrigada!</h2>
         <p class="lead reveal r2" style="max-width: 1200px; font-size: 38px;">A engenharia de dados automatizada transforma processos governamentais críticos em fluxos ágeis, seguros e altamente escaláveis.</p>
         <p class="lead reveal r3" style="font-size: 28px; color: var(--fh-light); margin-top: 30px;">Mais do que tecnologia: uma profunda evolução cultural orientada por dados.</p>
-        <p class="lead reveal r4" style="font-size: 22px; color: var(--on-teal-muted); margin-top: 60px;">
+        <p class="lead reveal r4" style="font-size: 36px; color: var(--on-teal-muted); margin-top: 60px;">
           <strong>Ana Clara Mendes Rezende</strong> · Coordenação de Informação · FHEMIG
         </p>
       </div>

@@ -41,7 +41,6 @@ registrar_atualizacao <- function(conn, ano_mes, bases_ok) {
   dbExecute(conn, query)
 }
 
-
 # Função para conectar ao MySQL com schema específico
 connect_db <- function() {
   tryCatch({
@@ -116,8 +115,6 @@ delete_existing_data <- function(conn, table_name, year_month) {
   dbExecute(conn, query)
 }
 
-
-
 # Função para incluir coluna DT_CMPT em todas as tabelas (no formato data hora)
 add_dt_cmpt <- function(dados, information_system) {
   if (information_system %in% c("SIH-RD", "SIH-RJ")) {
@@ -167,8 +164,6 @@ add_dt_cmpt <- function(dados, information_system) {
   
   return(dados)
 }
-
-
 
 # Função genérica para atualizar tabela
 update_table <- function(conn, information_system, table_name, year_month, cnes_fhemig = NULL) {
